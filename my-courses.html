@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>My Courses — NOUN Exam Summary Hub</title>
+<meta name="theme-color" content="#006400" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="header-mount"></div>
+
+<main class="container section">
+  <div class="section__head">
+    <h2>My Courses</h2>
+  </div>
+  <div id="premiumBanner" hidden style="margin-bottom:18px;"></div>
+
+  <div class="search-box" style="margin:0 0 24px; max-width:420px;">
+    <input type="search" id="myCoursesSearch" placeholder="Search your courses" aria-label="Search your courses" />
+  </div>
+
+  <div id="loggedOutState" class="empty-state" style="display:none;">
+    <div class="empty-state__icon">🔒</div>
+    <h3>Please log in</h3>
+    <p>Log in to see the courses you've unlocked.</p>
+    <a href="login.html?redirect=my-courses.html" class="btn btn--primary">Login</a>
+  </div>
+
+  <div class="course-grid" id="myCoursesGrid">
+    <div class="skeleton"></div>
+    <div class="skeleton"></div>
+  </div>
+</main>
+
+<div id="footer-mount"></div>
+<script type="module" src="js/main.js"></script>
+<script type="module">
+  import { renderMyCourses } from "./js/my-courses.js";
+
+  document.addEventListener("authready", (e) => {
+    const { user, profile } = e.detail;
+    if (!user) {
+      document.getElementById("loggedOutState").style.display = "block";
+      document.getElementById("myCoursesGrid").style.display = "none";
+      document.querySelector(".search-box").style.display = "none";
+      return;
+    }
+    renderMyCourses({ user, profile });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Dashboard — NOUN Exam Summary Hub</title>
+<meta name="theme-color" content="#006400" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="header-mount"></div>
+
+<main class="container section">
+  <div id="adminGate">
+    <div class="empty-state">
+      <div class="empty-state__icon">⏳</div>
+      <h3>Checking access…</h3>
+    </div>
+  </div>
+
+  <div id="adminDashboard" style="display:none;">
+    <div class="section__head">
+      <h2>Admin Dashboard</h2>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tab-payments">Payments</button>
+      <button class="tab-btn" data-tab="tab-add-course">Add Course</button>
+      <button class="tab-btn" data-tab="tab-manage-courses">Course Management</button>
+      <button class="tab-btn" data-tab="tab-bank-details">Bank Details</button>
+    </div>
+
+    <!-- TAB 1: Payments -->
+    <section id="tab-payments" class="tab-panel active">
+      <div class="filter-row">
+        <button class="filter-chip active" data-filter="all">All</button>
+        <button class="filter-chip" data-filter="pending">Pending</button>
+        <button class="filter-chip" data-filter="approved">Approved</button>
+        <button class="filter-chip" data-filter="rejected">Rejected</button>
+        <button class="filter-chip" data-filter="transfer">Transfer</button>
+        <button class="filter-chip" data-filter="course">Course Payments</button>
+        <button class="filter-chip" data-filter="premium">Premium Payments</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>User Email</th><th>Course</th><th>Type</th><th>Amount</th>
+              <th>Method</th><th>Proof</th><th>Status</th><th>Date</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 2: Add Course -->
+    <section id="tab-add-course" class="tab-panel">
+      <div class="card" style="max-width:520px;">
+        <h2>Add Course</h2>
+        <div id="addCourseErrors"></div>
+        <form class="form" id="addCourseForm" novalidate>
+          <div class="field">
+            <label for="courseCodeInput">Course Code</label>
+            <input type="text" id="courseCodeInput" placeholder="CIT301" required />
+          </div>
+          <div class="field">
+            <label for="courseNameInput">Course Name</label>
+            <input type="text" id="courseNameInput" placeholder="Introduction to Computer Science" required />
+          </div>
+          <div class="toggle-row">
+            <span>Free Course</span>
+            <label class="switch">
+              <input type="checkbox" id="courseFreeToggle" />
+              <span class="switch__track"></span>
+            </label>
+          </div>
+          <div class="field">
+            <label>Course PDF</label>
+            <div class="upload-drop" id="coursePdfDrop">
+              <input type="file" id="coursePdfInput" accept="application/pdf" />
+              <div>📄 Tap to select PDF file</div>
+              <div class="upload-drop__filename" id="coursePdfFileName"></div>
+            </div>
+          </div>
+          <div class="progress-bar" id="addCourseProgress" style="display:none;">
+            <div class="progress-bar__fill" id="addCourseProgressFill" style="width:0%;"></div>
+          </div>
+          <button type="submit" class="btn btn--primary btn--block" id="addCourseSubmitBtn">Upload Course</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 3: Course Management -->
+    <section id="tab-manage-courses" class="tab-panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Code</th><th>Name</th><th>Status</th><th>Created</th><th>PDF</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="courseManagementBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB 4: Bank Details -->
+    <section id="tab-bank-details" class="tab-panel">
+      <div class="card" style="max-width:520px;">
+        <h2>Bank Transfer Details</h2>
+        <p class="muted">These details are shown to students in the payment popup.</p>
+        <form class="form" id="bankDetailsForm" novalidate>
+          <div class="field">
+            <label for="bankNameInput">Bank Name</label>
+            <input type="text" id="bankNameInput" placeholder="Access Bank" required />
+          </div>
+          <div class="field">
+            <label for="accountNameInput">Account Name</label>
+            <input type="text" id="accountNameInput" placeholder="NOUN Exam Summary Hub" required />
+          </div>
+          <div class="field">
+            <label for="accountNumberInput">Account Number</label>
+            <input type="text" id="accountNumberInput" inputmode="numeric" placeholder="0123456789" required />
+          </div>
+          <button type="submit" class="btn btn--primary btn--block" id="bankDetailsSubmitBtn">Save Bank Details</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- Proof viewing modal -->
+<div class="modal-backdrop" id="proofModal">
+  <div class="modal">
+    <h2>Payment Proof</h2>
+    <img id="proofModalImg" src="" alt="Payment proof screenshot" style="width:100%;" />
+    <iframe id="proofModalFrame" title="Payment proof document" style="width:100%;height:60vh;border:0;" hidden></iframe>
+    <p class="muted" id="proofModalNote"></p>
+    <div class="modal__actions">
+      <a class="btn btn--ghost" id="proofModalOpen" href="#" target="_blank" rel="noopener">Open in new tab</a>
+      <button class="btn btn--primary" id="proofModalClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="footer-mount"></div>
+<script type="module" src="js/main.js"></script>
+<script type="module">
+  import { initTabs, initPaymentsTab, initAddCourseTab, initCourseManagementTab, initBankDetailsTab } from "./js/admin.js";
+
+  let initialized = false;
+
+  document.addEventListener("authready", (e) => {
+    const { user, isAdmin } = e.detail;
+    const gate = document.getElementById("adminGate");
+    const dashboard = document.getElementById("adminDashboard");
+
+    if (!user || !isAdmin) {
+      gate.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-state__icon">🚫</div>
+          <h3>Access Restricted</h3>
+          <p>This page is only available to the site administrator.</p>
+          <a href="index.html" class="btn btn--primary">Back to Home</a>
+        </div>`;
+      dashboard.style.display = "none";
+      return;
+    }
+
+    gate.style.display = "none";
+    dashboard.style.display = "block";
+
+    if (!initialized) {
+      initialized = true;
+      initTabs();
+      initPaymentsTab();
+      initAddCourseTab();
+      initCourseManagementTab();
+      initBankDetailsTab();
+    }
+  });
+</script>
+</body>
+</html>

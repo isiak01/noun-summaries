@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Login — NOUN Exam Summary Hub</title>
+<meta name="theme-color" content="#006400" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="header-mount"></div>
+
+<main class="container">
+  <div class="card auth-card">
+    <h1>Welcome Back</h1>
+    <p class="text-center muted" style="margin-bottom:20px;">Log in to access your courses.</p>
+    <div id="formAlert"></div>
+    <form class="form" id="loginForm" novalidate>
+      <div class="field">
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" required autocomplete="email" placeholder="you@example.com" />
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="Your password" />
+      </div>
+      <button type="submit" class="btn btn--primary btn--block" id="loginBtn">Log In</button>
+    </form>
+    <p class="auth-card__foot">Don't have an account? <a href="signup.html" style="color:var(--green); font-weight:700;">Sign up</a></p>
+  </div>
+</main>
+
+<div id="footer-mount"></div>
+<script type="module" src="js/main.js"></script>
+<script type="module">
+  import { logIn } from "./js/auth.js";
+  import { toast, friendlyError, setButtonLoading } from "./js/main.js";
+
+  const form = document.getElementById("loginForm");
+  const alertBox = document.getElementById("formAlert");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    alertBox.innerHTML = "";
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const btn = document.getElementById("loginBtn");
+    setButtonLoading(btn, true, "Logging in...");
+    try {
+      await logIn(email, password);
+      toast("Welcome back!", "success");
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = params.get("redirect") || "index.html";
+    } catch (err) {
+      alertBox.innerHTML = `<div class="alert alert--error">${friendlyError(err)}</div>`;
+      setButtonLoading(btn, false);
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "noun-exam-summary-hub",
+  "private": true,
+  "version": "1.0.0",
+  "description": "NOUN Exam Summary Hub frontend and Vercel Serverless API.",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "build": "echo \"Static frontend - no build step required\""
+  },
+  "dependencies": {
+    "cloudinary": "^2.5.1",
+    "firebase-admin": "^12.1.0"
+  }
+}

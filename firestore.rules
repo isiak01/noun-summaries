@@ -1,0 +1,63 @@
+rules_version = '2';
+
+function isSignedIn() { return request.auth != null; }
+function isAdmin() { return isSignedIn() && request.auth.token.role == 'admin'; }
+function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId)
+        && request.resource.data.role == 'user'
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.isPremium == false
+        && request.resource.data.paid_courses.size() == 0
+        && request.resource.data.freeCoursesUsed == 0;
+      allow update: if isAdmin()
+        || (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['role','isPremium','paid_courses','email','createdAt','freeCoursesUsed']));
+      allow delete: if false;
+    }
+
+    match /courses/{courseId} {
+      allow read: if true;
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasAll(['code','name','pdfPublicId','pdfResourceType','isFree','createdAt'])
+        && request.resource.data.code is string
+        && request.resource.data.name is string
+        && request.resource.data.pdfPublicId is string
+        && request.resource.data.pdfResourceType is string
+        && request.resource.data.isFree is bool;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.method == 'transfer'
+        && request.resource.data.status == 'pending'
+        && request.resource.data.paymentType in ['course','premium']
+        && request.resource.data.amount in [500, 5000]
+        && request.resource.data.currency == 'NGN'
+        && request.resource.data.proofURL is string;
+      // Normal clients can never approve/reject or edit payment records.
+      // Admin actions are performed by trusted Cloud Functions using Admin SDK.
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    match /payment_intents/{intentId} {
+      allow read, write: if false;
+    }
+
+    match /settings/{docId} {
+      // Bank transfer details are shown to signed-in students, edited by admins only.
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

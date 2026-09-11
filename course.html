@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Course — NOUN Exam Summary Hub</title>
+<meta name="theme-color" content="#006400" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="header-mount"></div>
+
+<main>
+  <div class="course-hero">
+    <div class="container" id="courseHeroContent">
+      <div class="skeleton" style="height:80px;"></div>
+    </div>
+  </div>
+
+  <div class="container section" id="courseBody" style="display:none;">
+    <div class="stack" style="max-width:760px; margin:0 auto;">
+
+      <div class="card">
+        <h2>Preview</h2>
+        <div class="pdf-preview" id="pdfPreview"></div>
+      </div>
+
+      <div id="accessArea"></div>
+
+    </div>
+  </div>
+
+  <div class="container" id="notFoundArea" style="display:none;">
+    <div class="empty-state">
+      <div class="empty-state__icon">🔍</div>
+      <h3>Course not found</h3>
+      <p>The course you're looking for doesn't exist or hasn't been added yet.</p>
+      <a href="index.html" class="btn btn--primary">Back to Home</a>
+    </div>
+  </div>
+</main>
+
+<!-- Transfer proof modal -->
+<div class="modal-backdrop" id="transferModal">
+  <div class="modal">
+    <h2 id="transferModalTitle">Bank Transfer</h2>
+    <div class="transfer-details" id="transferDetails"></div>
+    <div class="field" style="margin-top:16px;">
+      <label>Upload payment screenshot (proof of transfer)</label>
+      <div class="upload-drop" id="proofDrop">
+        <input type="file" id="proofInput" accept="image/*" />
+        <div>📤 Tap to select screenshot</div>
+        <div class="upload-drop__filename" id="proofFileName"></div>
+      </div>
+      <div class="progress-bar" id="proofProgress" style="display:none;"><div class="progress-bar__fill" id="proofProgressFill" style="width:0%;"></div></div>
+    </div>
+    <div class="modal__actions">
+      <button class="btn btn--ghost" id="transferCancelBtn">Cancel</button>
+      <button class="btn btn--primary" id="transferSubmitBtn">I Have Paid</button>
+    </div>
+  </div>
+</div>
+
+<div id="footer-mount"></div>
+<script type="module" src="js/main.js"></script>
+<script type="module">
+  import { fetchCourseByCode } from "./js/courses.js";
+  import { userCanAccessCourse, createTransferPaymentRequest, fetchBankDetails, getAuthorizedCoursePdfUrl, fetchAuthorizedCoursePdfBlob } from "./js/payments.js";
+  import { uploadToCloudinary } from "./js/cloudinary.js";
+  import { renderLimitedPreview, downloadWatermarkedPdf } from "./js/watermark.js";
+  import { toast, setButtonLoading } from "./js/main.js";
+  import { APP_CONFIG } from "./js/config.js";
+
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  let course = null;
+  let currentUser = null;
+  let currentProfile = null;
+
+  function priceCardHTML(label, amount, desc) {
+    return `<div class="card price-card">
+      <div class="price-card__label">${label}</div>
+      <div class="price-card__amount">₦${amount.toLocaleString()}</div>
+      <p class="price-card__desc">${desc}</p>
+    </div>`;
+  }
+
+  function renderHero() {
+    const el = document.getElementById("courseHeroContent");
+    const badge = course.isFree
+      ? `<span class="badge badge--free">Free</span>`
+      : `<span class="badge badge--premium">Premium</span>`;
+    el.innerHTML = `
+      <div class="course-hero__meta">${badge}<span class="muted">${course.code}</span></div>
+      <h1>${course.name}</h1>
+      <p class="muted">Concise exam-focused summary for ${course.code}.</p>
+    `;
+  }
+
+  async function renderAccessArea() {
+    const area = document.getElementById("accessArea");
+    const hasAccess = userCanAccessCourse(currentProfile, course);
+
+    // Preview
+    const previewEl = document.getElementById("pdfPreview");
+    if (!course.pdfURL && !course.pdfPublicId) {
+      previewEl.innerHTML = `<p class="pdf-preview__error">No PDF has been uploaded for this course yet.</p>`;
+    } else if (hasAccess) {
+      try {
+        const { url } = await getAuthorizedCoursePdfUrl(course.code);
+        await renderLimitedPreview(url, previewEl, { maxPages: 3, locked: false });
+        previewEl.dataset.authorizedUrl = url;
+      } catch (err) {
+        previewEl.innerHTML = `<p class="pdf-preview__error">Preview unavailable right now.</p>`;
+      }
+    } else {
+      previewEl.innerHTML = `<div class="card text-center" style="padding:40px;"><div style="font-size:42px;">🔒</div><h3>Preview locked</h3><p class="muted">Purchase this course to view the PDF and download your personalized copy.</p></div>`;
+    }
+
+    if (hasAccess) {
+      area.innerHTML = `
+        <div class="card text-center">
+          <h2>You have access to this course</h2>
+          <p>${course.isFree ? "This is a free course." : (currentProfile?.isPremium ? "Unlocked via your Premium membership." : "You purchased this course.")}</p>
+          <button class="btn btn--primary" id="downloadBtn">⬇ Download PDF</button>
+        </div>`;
+      document.getElementById("downloadBtn").addEventListener("click", async (e) => {
+        setButtonLoading(e.target, true, "Preparing file...");
+        try {
+          const pdfBlob = await fetchAuthorizedCoursePdfBlob(course.code);
+          await downloadWatermarkedPdf(pdfBlob, currentUser?.email || "guest", `${course.code}.pdf`);
+        } catch (err) {
+          toast(err.message || "Could not prepare the PDF.", "error");
+        }
+        setButtonLoading(e.target, false);
+      });
+      return;
+    }
+
+    if (!currentUser) {
+      area.innerHTML = `
+        <div class="card text-center">
+          <h2>Login required</h2>
+          <p>Please log in or create an account to unlock this course.</p>
+          <a class="btn btn--primary" href="login.html?redirect=course.html?code=${encodeURIComponent(course.code)}">Login to Continue</a>
+        </div>`;
+      return;
+    }
+
+    area.innerHTML = `
+      <div class="card">
+        <h2>Unlock this course</h2>
+        <div class="pricing-grid">
+          ${priceCardHTML("This Course", APP_CONFIG.pricing.course, "Manual bank transfer, confirmed by admin.")}
+          ${priceCardHTML("Unlock All Premium", APP_CONFIG.pricing.premium, "Every course, no repeat payments.")}
+        </div>
+        <div class="row" style="margin-top:18px; justify-content:center;">
+          <button class="btn btn--primary" id="transferCourseBtn">Pay via Bank Transfer — \u20a6${APP_CONFIG.pricing.course}</button>
+          <button class="btn btn--outline" id="premiumBtn">Premium via Bank Transfer — \u20a6${APP_CONFIG.pricing.premium}</button>
+        </div>
+        <p class="muted text-center" style="margin-top:12px;">Transfer to the account shown, upload your payment screenshot, then tap "I Have Paid". An admin confirms your payment and your access is unlocked.</p>
+      </div>`;
+
+    document.getElementById("transferCourseBtn").addEventListener("click", () => openTransferModal("course"));
+    document.getElementById("premiumBtn").addEventListener("click", () => openTransferModal("premium"));
+  }
+
+  let pendingProofURL = null;
+  let bankDetails = null;
+
+  async function openTransferModal(paymentType) {
+    const amount = paymentType === "premium" ? APP_CONFIG.pricing.premium : APP_CONFIG.pricing.course;
+    const modal = document.getElementById("transferModal");
+    document.getElementById("transferModalTitle").textContent = paymentType === "premium" ? "Bank Transfer \u2014 Premium" : `Bank Transfer \u2014 ${course.code}`;
+    modal.dataset.paymentType = paymentType;
+    pendingProofURL = null;
+    document.getElementById("proofFileName").textContent = "";
+    document.getElementById("transferDetails").innerHTML = `<p class="muted">Loading bank details\u2026</p>`;
+    modal.classList.add("open");
+
+    if (!bankDetails) bankDetails = await fetchBankDetails();
+    document.getElementById("transferDetails").innerHTML = `
+      <dl>
+        <dt>Amount</dt><dd>\u20a6${amount.toLocaleString()}</dd>
+        <dt>Bank Name</dt><dd>${bankDetails.bankName}</dd>
+        <dt>Account Name</dt><dd>${bankDetails.accountName}</dd>
+        <dt>Account Number</dt><dd>${bankDetails.accountNumber}</dd>
+      </dl>
+      <p class="muted">After transferring, upload your payment screenshot below, then tap "I Have Paid". An admin will confirm your payment.</p>`;
+  }
+  document.getElementById("transferCancelBtn").addEventListener("click", () => {
+    document.getElementById("transferModal").classList.remove("open");
+  });
+  document.getElementById("proofDrop").addEventListener("click", () => document.getElementById("proofInput").click());
+  document.getElementById("proofInput").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById("proofFileName").textContent = `Selected: ${file.name}`;
+    const progressWrap = document.getElementById("proofProgress");
+    const fill = document.getElementById("proofProgressFill");
+    progressWrap.style.display = "block";
+    try {
+      pendingProofURL = await uploadToCloudinary(file, (pct) => (fill.style.width = pct + "%"));
+      toast("Screenshot uploaded.", "success");
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  });
+  document.getElementById("transferSubmitBtn").addEventListener("click", async (e) => {
+    if (!pendingProofURL) {
+      toast("Please upload your payment screenshot first.", "error");
+      return;
+    }
+    const paymentType = document.getElementById("transferModal").dataset.paymentType;
+    setButtonLoading(e.target, true, "Submitting...");
+    try {
+      await createTransferPaymentRequest({
+        userId: currentUser.uid, email: currentUser.email, paymentType,
+        courseCode: paymentType === "course" ? course.code : undefined, proofURL: pendingProofURL
+      });
+      toast("Payment submitted. Waiting for admin confirmation.", "success");
+      document.getElementById("transferModal").classList.remove("open");
+    } catch (err) {
+      toast(err.message || "Could not submit payment request.", "error");
+    }
+    setButtonLoading(e.target, false);
+  });
+
+  let authResolved = false;
+  document.addEventListener("authready", (e) => {
+    currentUser = e.detail.user;
+    currentProfile = e.detail.profile;
+    authResolved = true;
+    if (course) {
+      renderAccessArea();
+    }
+  });
+
+  async function init() {
+    if (!code) {
+      document.getElementById("notFoundArea").style.display = "block";
+      return;
+    }
+    try {
+      course = await fetchCourseByCode(code);
+    } catch (err) {
+      console.error(err);
+    }
+    if (!course) {
+      document.getElementById("notFoundArea").style.display = "block";
+      return;
+    }
+    renderHero();
+    document.getElementById("courseBody").style.display = "block";
+    if (authResolved) renderAccessArea();
+  }
+
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+node_modules/
+.workspace/
+functions/node_modules/
+.env
+.env.*
+!.env.example
+*.log
+firebase-debug.log
+.DS_Store

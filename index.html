@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NOUN Exam Summary Hub — Study Smarter. Prepare Better.</title>
+<meta name="description" content="Find concise NOUN exam course summaries and unlock premium study materials." />
+<meta name="theme-color" content="#006400" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div id="header-mount"></div>
+
+<main id="main-content">
+  <section class="hero">
+    <div class="container">
+      <span class="hero__eyebrow">National Open University Study Aid</span>
+      <h1>NOUN Exam Summary Hub</h1>
+      <p class="hero__sub">Study Smarter. Prepare Better. Find concise course summaries and unlock premium study materials built to help you pass with confidence.</p>
+
+      <form class="search-box" id="searchForm" role="search">
+        <input type="search" id="searchInput" placeholder="Search course code e.g. CIT301" aria-label="Search course code or name" />
+        <button type="submit" class="btn btn--primary">Search</button>
+      </form>
+
+      <div class="hero__actions">
+        <a href="#courses" class="btn btn--outline">Browse Courses</a>
+        <a href="my-courses.html" class="btn btn--primary" data-requires-auth>My Courses</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="courses">
+    <div class="container">
+      <div class="section__head">
+        <h2>Popular Courses</h2>
+        <span class="muted" id="courseCount"></span>
+      </div>
+      <div class="course-grid" id="courseGrid" aria-live="polite">
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+        <div class="skeleton"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="footer-mount"></div>
+<a
+  id="whatsappFloatBtn"
+  class="btn btn--primary install-btn"
+  href="https://wa.me/2347049267637"
+  target="_blank"
+  rel="noopener"
+  aria-label="Chat with us on WhatsApp"
+  title="Chat with us on WhatsApp"
+>💬 WhatsApp Us</a>
+
+<script type="module" src="js/main.js"></script>
+<script type="module">
+  import { fetchAllCourses, filterCourses } from "./js/courses.js";
+  import { toast } from "./js/main.js";
+
+  let allCourses = [];
+
+  function courseCardHTML(course) {
+    const statusBadge = course.isFree
+      ? `<span class="badge badge--free">Free</span>`
+      : `<span class="badge badge--premium">Premium</span>`;
+    return `
+      <div class="card course-card">
+        <div class="course-card__top">
+          <span class="course-card__code">${course.code}</span>
+          ${statusBadge}
+        </div>
+        <p class="course-card__name">${course.name}</p>
+        <div class="course-card__actions">
+          <a class="btn btn--outline btn--block" href="course.html?code=${encodeURIComponent(course.code)}">View Course</a>
+        </div>
+      </div>`;
+  }
+
+  function renderCourses(list) {
+    const grid = document.getElementById("courseGrid");
+    const count = document.getElementById("courseCount");
+    count.textContent = list.length ? `${list.length} course${list.length === 1 ? "" : "s"}` : "";
+    if (!list.length) {
+      grid.innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;">
+          <div class="empty-state__icon">📚</div>
+          <h3>No courses available yet</h3>
+          <p>The admin hasn't added any courses yet. Please check back soon.</p>
+        </div>`;
+      return;
+    }
+    grid.innerHTML = list.map(courseCardHTML).join("");
+  }
+
+  async function init() {
+    try {
+      allCourses = await fetchAllCourses();
+      renderCourses(allCourses);
+    } catch (err) {
+      console.error(err);
+      document.getElementById("courseGrid").innerHTML = `
+        <div class="empty-state" style="grid-column:1/-1;">
+          <div class="empty-state__icon">⚠️</div>
+          <h3>Couldn't load courses</h3>
+          <p>Please refresh the page. If this keeps happening, check your connection.</p>
+        </div>`;
+    }
+  }
+
+  document.getElementById("searchForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const term = document.getElementById("searchInput").value;
+    renderCourses(filterCourses(allCourses, term));
+    if (term) document.getElementById("courses").scrollIntoView({ behavior: "smooth" });
+  });
+
+  document.getElementById("searchInput").addEventListener("input", (e) => {
+    renderCourses(filterCourses(allCourses, e.target.value));
+  });
+
+  init();
+</script>
+</body>
+</html>
