@@ -74,7 +74,7 @@ const NAV_HTML = `
     <nav class="primary-nav" id="primaryNav" aria-label="Primary">
       <a href="index.html" class="nav-link">Home</a>
       <a href="index.html#courses" class="nav-link">Courses</a>
-      <a href="https://cbt-dusky.vercel.app" class="nav-link" target="_blank" rel="noopener">CBT APP</a>
+      <a href="https://dans-cbt.vercel.app/" class="nav-link" target="_blank" rel="noopener">CBT APP</a>
       <a href="my-courses.html" class="nav-link" data-requires-auth>My Courses</a>
       <a href="admin.html" class="nav-link nav-link--admin" data-admin-only hidden>Admin Dashboard</a>
       <a href="login.html" class="nav-link" data-guest-only>Login</a>
