@@ -44,6 +44,9 @@
         <div class="skeleton"></div>
         <div class="skeleton"></div>
       </div>
+      <div class="course-grid__more">
+        <button class="btn btn--primary" id="viewAllCoursesBtn" type="button" hidden>View all courses</button>
+      </div>
     </div>
   </section>
 
@@ -66,6 +69,7 @@
   import { toast } from "./js/main.js";
 
   let allCourses = [];
+  let showAllCourses = false;
 
   function courseCardHTML(course) {
     const statusBadge = course.isFree
@@ -87,17 +91,23 @@
   function renderCourses(list) {
     const grid = document.getElementById("courseGrid");
     const count = document.getElementById("courseCount");
+    const viewAllBtn = document.getElementById("viewAllCoursesBtn");
     count.textContent = list.length ? `${list.length} course${list.length === 1 ? "" : "s"}` : "";
     if (!list.length) {
+      grid.classList.remove("course-grid--preview");
       grid.innerHTML = `
         <div class="empty-state" style="grid-column:1/-1;">
           <div class="empty-state__icon">📚</div>
           <h3>No courses available yet</h3>
           <p>The admin hasn't added any courses yet. Please check back soon.</p>
         </div>`;
+      viewAllBtn.hidden = true;
       return;
     }
-    grid.innerHTML = list.map(courseCardHTML).join("");
+    const visibleCourses = showAllCourses ? list : list.slice(0, 3);
+    grid.classList.toggle("course-grid--preview", !showAllCourses && list.length > 3);
+    grid.innerHTML = visibleCourses.map(courseCardHTML).join("");
+    viewAllBtn.hidden = showAllCourses || list.length <= 3;
   }
 
   async function init() {
@@ -124,6 +134,11 @@
 
   document.getElementById("searchInput").addEventListener("input", (e) => {
     renderCourses(filterCourses(allCourses, e.target.value));
+  });
+
+  document.getElementById("viewAllCoursesBtn").addEventListener("click", () => {
+    showAllCourses = true;
+    renderCourses(allCourses);
   });
 
   init();
