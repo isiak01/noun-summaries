@@ -52,13 +52,13 @@
 <div id="footer-mount"></div>
 <a
   id="whatsappFloatBtn"
-  class="btn btn--primary install-btn"
+  class="btn btn--primary whatsapp-btn"
   href="https://wa.me/2347049267637"
   target="_blank"
   rel="noopener"
   aria-label="Chat with us on WhatsApp"
   title="Chat with us on WhatsApp"
->💬 WhatsApp Us</a>
+>💬 Message us now</a>
 
 <script type="module" src="js/main.js"></script>
 <script type="module">
@@ -70,7 +70,7 @@
   function courseCardHTML(course) {
     const statusBadge = course.isFree
       ? `<span class="badge badge--free">Free</span>`
-      : `<span class="badge badge--premium">Premium</span>`;
+      : "";
     return `
       <div class="card course-card">
         <div class="course-card__top">

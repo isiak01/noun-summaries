@@ -91,7 +91,7 @@
     const el = document.getElementById("courseHeroContent");
     const badge = course.isFree
       ? `<span class="badge badge--free">Free</span>`
-      : `<span class="badge badge--premium">Premium</span>`;
+      : "";
     el.innerHTML = `
       <div class="course-hero__meta">${badge}<span class="muted">${course.code}</span></div>
       <h1>${course.name}</h1>

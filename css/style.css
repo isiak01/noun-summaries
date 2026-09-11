@@ -311,7 +311,7 @@ tr:last-child td { border-bottom: none; }
 .mt-0 { margin-top: 0; }
 .muted { color: var(--gray-400); font-size: 0.85rem; }
 .divider { height: 1px; background: var(--gray-100); margin: 20px 0; border: none; }
-.install-btn { position: fixed; bottom: 18px; right: 18px; z-index: 90; box-shadow: var(--shadow-lg); }
+.whatsapp-btn { position: fixed; bottom: 18px; right: 18px; z-index: 90; box-shadow: var(--shadow-lg); }
 
 /* Payment modal */
 .modal-backdrop.is-open { display: flex; }
